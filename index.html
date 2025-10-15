@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Webhook Tester</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --muted: #6b7280;
+      --text: #e5e7eb;
+      --primary: #22c55e;
+      --accent: #60a5fa;
+      --danger: #ef4444;
+      --warn: #f59e0b;
+      --border: #1f2937;
+      --chip: #334155;
+      --input: #0b1220;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: radial-gradient(1200px 600px at 10% 5%, #0b1220 0%, var(--bg) 60%), var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .app {
+      max-width: 1200px;
+      margin: 24px auto;
+      padding: 0 16px 64px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    header .title {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .logo {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: conic-gradient(from 225deg, #16a34a, #38bdf8, #a855f7, #16a34a);
+      position: relative; overflow: hidden;
+    }
+    .logo::after {
+      content: ""; position: absolute; inset: 2px; border-radius: 8px; background: var(--bg);
+    }
+    h1 { font-size: 22px; margin: 0; letter-spacing: 0.3px; }
+    .subtitle { color: var(--muted); font-size: 12px; }
+    .pill {
+      border: 1px solid var(--border); background: rgba(255,255,255,0.02);
+      color: var(--muted); font-size: 12px; padding: 6px 10px; border-radius: 999px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 16px;
+    }
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.0));
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .panel h3 { margin: 0 0 10px; font-size: 14px; color: #cbd5e1; letter-spacing: 0.3px; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .row + .row { margin-top: 8px; }
+    .grow { flex: 1 1 auto; }
+
+    label { font-size: 12px; color: #cbd5e1; }
+    .input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: var(--input);
+      color: var(--text);
+      border-radius: 10px;
+      outline: none;
+      padding: 10px 12px;
+      font-size: 13px;
+      transition: border 0.15s ease, box-shadow 0.15s ease;
+    }
+    .input:focus, select:focus, textarea:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+    }
+    textarea {
+      min-height: 140px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      resize: vertical;
+      line-height: 1.45;
+      tab-size: 2;
+    }
+    .btn {
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      color: var(--text);
+      border-radius: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-size: 13px;
+      white-space: nowrap;
+      transition: transform 0.05s ease, border 0.2s ease, background 0.2s ease, color 0.2s ease;
+    }
+    .btn:hover { border-color: #374151; }
+    .btn:active { transform: translateY(1px); }
+    .btn.primary {
+      border-color: rgba(34,197,94,0.4);
+      background: linear-gradient(180deg, rgba(34,197,94,0.2), rgba(34,197,94,0.12));
+      color: #eafff1;
+    }
+    .btn.warn {
+      border-color: rgba(245,158,11,0.4);
+      background: linear-gradient(180deg, rgba(245,158,11,0.2), rgba(245,158,11,0.12));
+      color: #fffbe6;
+    }
+    .btn.danger {
+      border-color: rgba(239,68,68,0.4);
+      background: linear-gradient(180deg, rgba(239,68,68,0.2), rgba(239,68,68,0.12));
+      color: #fff2f2;
+    }
+    .hint { font-size: 12px; color: var(--muted); }
+
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip {
+      font-size: 11px; color: #d1d5db;
+      background: var(--chip);
+      border: 1px solid var(--border);
+      padding: 4px 8px; border-radius: 999px;
+    }
+
+    .kvs { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; }
+    .kvs .btn { padding: 8px 10px; }
+    .kvs-header { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-bottom: 6px; color: var(--muted); font-size: 12px; }
+
+    .section {
+      border-top: 1px dashed var(--border);
+      margin-top: 12px; padding-top: 12px;
+    }
+
+    .split {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+
+    .code {
+      background: #0b1020;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 12px;
+      overflow: auto;
+      white-space: pre;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
+    }
+
+    .status {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .badge {
+      font-size: 11px; padding: 4px 8px; border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      color: #d1d5db;
+    }
+    .badge.ok {
+      border-color: rgba(34,197,94,0.4);
+      background: rgba(34,197,94,0.14);
+      color: #dcfce7;
+    }
+    .badge.fail {
+      border-color: rgba(239,68,68,0.4);
+      background: rgba(239,68,68,0.14);
+      color: #fee2e2;
+    }
+
+    .footer {
+      margin-top: 18px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title">
+        <div class="logo"></div>
+        <div>
+          <h1>Webhook Tester</h1>
+          <div class="subtitle">Craft, sign, and send test webhook events. Preview cURL. Inspect responses.</div>
+        </div>
+      </div>
+      <div class="pill">Round 1 • No backend • Client-only</div>
+    </header>
+
+    <div class="grid">
+      <div class="panel">
+        <h3>Request</h3>
+        <div class="row">
+          <input id="url" class="input grow" placeholder="https://your-server.example.com/webhooks" />
+        </div>
+        <div class="row">
+          <div>
+            <label>Method</label>
+            <select id="method">
+              <option>POST</option>
+              <option>PUT</option>
+              <option>PATCH</option>
+            </select>
+          </div>
+          <div class="grow">
+            <label>Content Type</label>
+            <select id="contentType">
+              <option value="application/json">application/json</option>
+              <option value="text/plain">text/plain</option>
+              <option value="application/x-www-form-urlencoded">application/x-www-form-urlencoded</option>
+            </select>
+          </div>
+          <div>
+            <label>Timeout (s)</label>
+            <input id="timeout" type="number" min="1" value="30" class="input" style="width:120px" />
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="row" style="align-items:flex-end;">
+            <div class="grow">
+              <label>Payload</label>
+              <textarea id="body" spellcheck="false">{ "event": "test.event", "id": "evt_${RANDHEX8}", "created": "${NOW_ISO}", "data": { "message": "Hello from Webhook Tester" } }</textarea>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <button class="btn" id="prettyBtn" title="Format JSON if valid">Beautify</button>
+              <button class="btn" id="minifyBtn" title="Minify JSON if valid">Minify</button>
+              <button class="btn" id="fillBtn" title="Insert sample payload">Sample</button>
+            </div>
+          </div>
+          <div class="hint">Placeholders supported in payload and headers: ${NOW}, ${NOW_ISO}, ${EPOCH}, ${RAND}, ${RANDHEX8}, ${UUIDv4}</div>
+        </div>
+
+        <div class="section">
+          <div class="kvs-header">
+            <div>Header</div>
+            <div>Value</div>
+            <div></div>
+          </div>
+          <div id="headers" class="kvs"></div>
+          <div class="row" style="margin-top:8px;">
+            <button id="addHeader" class="btn">+ Add header</button>
+            <div class="chips">
+              <span class="chip addQuick" data-name="User-Agent" data-val="WebhookTester/1.0">User-Agent: WebhookTester/1.0</span>
+              <span class="chip addQuick" data-name="X-Event-Name" data-val="test.event">X-Event-Name: test.event</span>
+              <span class="chip addQuick" data-name="Idempotency-Key" data-val="${UUIDv4}">Idempotency-Key: ${UUIDv4}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>Signature (optional)</h3>
+          <div class="split">
+            <div>
+              <label>Algorithm</label>
+              <select id="sigAlg">
+                <option value="none">None</option>
+                <option value="hmac-sha256">HMAC-SHA256</option>
+              </select>
+            </div>
+            <div>
+              <label>Secret</label>
+              <input id="sigSecret" class="input" placeholder="your_webhook_secret" />
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px;">
+            <div class="grow">
+              <label>Signature Header Name</label>
+              <input id="sigHeader" class="input" value="X-Signature" />
+            </div>
+            <div class="grow">
+              <label>Header Value Template</label>
+              <input id="sigTemplate" class="input" value="sha256=${sig}" />
+              <div class="hint">Use ${sig} for signature. Supports ${ts} if timestamp is included.</div>
+            </div>
+          </div>
+          <div class="row">
+            <label><input type="checkbox" id="includeTs" /> Include timestamp</label>
+            <div class="grow">
+              <input id="tsHeader" class="input" value="X-Signature-Timestamp" />
+              <div class="hint">Seconds since epoch</div>
+            </div>
+          </div>
+          <div class="hint" id="cryptoHint"></div>
+        </div>
+
+        <div class="section">
+          <div class="row">
+            <div class="grow">
+              <label>Concurrent sends</label>
+              <input id="count" type="number" class="input" min="1" value="1" />
+            </div>
+            <div class="grow">
+              <label>Interval between sends (ms)</label>
+              <input id="interval" type="number" class="input" min="0" value="0" />
+            </div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <button id="sendBtn" class="btn primary">Send</button>
+          <button id="resetBtn" class="btn">Reset</button>
+          <button id="clearRespBtn" class="btn">Clear response</button>
+          <div class="chips">
+            <span class="chip">CORS applies to browser requests</span>
+            <span class="chip">Use cURL if blocked</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Preview & Response</h3>
+        <div>
+          <label>cURL Preview</label>
+          <pre id="curl" class="code" style="min-height: 110px;"></pre>
+          <div class="row" style="margin-top:8px;">
+            <button id="copyCurl" class="btn">Copy cURL</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="status" id="statusBar"></div>
+          <div class="split" style="margin-top:10px;">
+            <div>
+              <label>Response Headers</label>
+              <pre id="respHeaders" class="code" style="min-height:120px;"></pre>
+            </div>
+            <div>
+              <label>Response Body</label>
+              <pre id="respBody" class="code" style="min-height:120px;"></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <label>History (this session)</label>
+          <pre id="history" class="code" style="min-height: 80px; max-height: 220px;"></pre>
+          <div class="row" style="margin-top:8px;">
+            <button id="clearHistory" class="btn warn">Clear History</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>Tip: For endpoints without CORS, use the cURL command in your terminal.</div>
+      <div class="chips">
+        <span class="chip">Sends: <span id="sendsCount">0</span></span>
+        <span class="chip">Last latency: <span id="lastLatency">-</span></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Utilities
+    const $ = (q) => document.querySelector(q);
+    const escapeShellSingle = (s) => s.replace(/'/g, `'\\''`);
+    const toHex = (buf) => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+    function nowPlaceholders() {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2,'0');
+      const iso = now.toISOString();
+      const epoch = Math.floor(now.getTime()/1000);
+      return { NOW: `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`,
+               NOW_ISO: iso,
+               EPOCH: epoch };
+    }
+    function uuidv4() {
+      // RFC 4122 v4
+      const bytes = crypto.getRandomValues(new Uint8Array(16));
+      bytes[6] = (bytes[6] & 0x0f) | 0x40;
+      bytes[8] = (bytes[8] & 0x3f) | 0x80;
+      const s = [...bytes].map(b => b.toString(16).padStart(2,'0')).join('');
+      return `${s.slice(0,8)}-${s.slice(8,12)}-${s.slice(12,16)}-${s.slice(16,20)}-${s.slice(20)}`;
+    }
+    function applyPlaceholders(input) {
+      if (typeof input !== 'string') return input;
+      const { NOW, NOW_ISO, EPOCH } = nowPlaceholders();
+      return input
+        .replaceAll('${NOW_ISO}', NOW_ISO)
+        .replaceAll('${NOW}', NOW)
+        .replaceAll('${EPOCH}', String(EPOCH))
+        .replaceAll('${UUIDv4}', uuidv4())
+        .replaceAll('${RANDHEX8}', Math.random().toString(16).slice(2,10).padEnd(8, '0').slice(0,8))
+        .replaceAll('${RAND}', Math.random().toString().slice(2));
+    }
+
+    async function hmacSHA256(secret, message) {
+      if (!window.crypto?.subtle) throw new Error('Web Crypto not available in this context (need HTTPS/localhost).');
+      const enc = new TextEncoder();
+      const keyData = enc.encode(secret);
+      const msgData = enc.encode(message);
+      const key = await crypto.subtle.importKey(
+        'raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+      );
+      const sig = await crypto.subtle.sign('HMAC', key, msgData);
+      return toHex(sig);
+    }
+
+    function formatHeadersForCurl(headers) {
+      return headers.map(([k,v]) => `-H '${escapeShellSingle(k)}: ${escapeShellSingle(v)}'`).join(' ');
+    }
+
+    function prettyMaybeJSON(text) {
+      try { return JSON.stringify(JSON.parse(text), null, 2); } catch { return text; }
+    }
+
+    function buildHeadersArray() {
+      const rows = Array.from(document.querySelectorAll('.header-row'));
+      const arr = [];
+      for (const r of rows) {
+        const name = r.querySelector('.h-name').value.trim();
+        const val = r.querySelector('.h-val').value;
+        if (name) arr.push([name, applyPlaceholders(val)]);
+      }
+      return arr;
+    }
+
+    function setHeadersArray(arr) {
+      const container = $('#headers');
+      container.innerHTML = '';
+      for (const [k,v] of arr) {
+        addHeaderRow(k, v);
+      }
+    }
+
+    function addHeaderRow(name='', value='') {
+      const container = $('#headers');
+      const row = document.createElement('div');
+      row.className = 'row header-row';
+      row.style.gap = '8px';
+      row.innerHTML = `
+        <input class="input grow h-name" placeholder="Header-Name" value="${name}"/>
+        <input class="input grow h-val" placeholder="value" value="${value}"/>
+        <button class="btn danger del">✕</button>
+      `;
+      row.querySelector('.del').addEventListener('click', () => {
+        row.remove();
+        updateCurl();
+        persist();
+      });
+      for (const el of row.querySelectorAll('input')) {
+        el.addEventListener('input', () => { updateCurl(); persist(); });
+      }
+      container.appendChild(row);
+    }
+
+    function getBodyString() {
+      const ct = $('#contentType').value;
+      let body = $('#body').value;
+      body = applyPlaceholders(body);
+      if (ct === 'application/json') {
+        // Validate JSON if possible
+        try {
+          const parsed = JSON.parse(body);
+          return JSON.stringify(parsed);
+        } catch {
+          return body; // send as-is
+        }
+      } else if (ct === 'application/x-www-form-urlencoded') {
+        // If body looks like JSON, stringify key-values
+        try {
+          const obj = JSON.parse(body);
+          const params = new URLSearchParams();
+          for (const [k,v] of Object.entries(obj)) {
+            params.append(k, typeof v === 'object' ? JSON.stringify(v) : String(v));
+          }
+          return params.toString();
+        } catch {
+          return body.trim();
+        }
+      } else {
+        return body;
+      }
+    }
+
+    function buildRequestConfig(includeSignature=true) {
+      const url = $('#url').value.trim();
+      const method = $('#method').value;
+      const ct = $('#contentType').value;
+      const baseHeaders = buildHeadersArray();
+
+      // Body to send
+      const bodyStr = getBodyString();
+
+      // Add Content-Type header if not set
+      const hasCT = baseHeaders.some(([k]) => k.toLowerCase() === 'content-type');
+      if (!hasCT) baseHeaders.push(['Content-Type', ct]);
+
+      // Signature
+      const alg = $('#sigAlg').value;
+      const secret = $('#sigSecret').value;
+      const sigHeader = $('#sigHeader').value.trim();
+      const sigTemplate = $('#sigTemplate').value.trim();
+      const includeTs = $('#includeTs').checked;
+      const tsHeader = $('#tsHeader').value.trim();
+      const ts = Math.floor(Date.now()/1000);
+
+      const headers = [...baseHeaders];
+      const signatureInfo = { used: false, ts: null, sig: null };
+
+      const wantsSig = includeSignature && alg !== 'none' && sigHeader;
+      const signBody = async () => {
+        if (wantsSig) {
+          if (includeTs && tsHeader) headers.push([tsHeader, String(ts)]);
+          let sigHex = '';
+          if (alg === 'hmac-sha256') {
+            sigHex = await hmacSHA256(secret, bodyStr);
+          }
+          const headerValue = sigTemplate.replaceAll('${sig}', sigHex).replaceAll('${ts}', String(ts));
+          headers.push([sigHeader, headerValue]);
+          signatureInfo.used = true;
+          signatureInfo.ts = includeTs ? ts : null;
+          signatureInfo.sig = sigHex;
+        }
+      };
+
+      return { url, method, ct, headers, bodyStr, signBody, signatureInfo };
+    }
+
+    function buildCurlPreview(cfg) {
+      const headersPart = formatHeadersForCurl(cfg.headers);
+      const methodPart = cfg.method !== 'POST' ? `-X ${cfg.method}` : '';
+      const dataPart = cfg.bodyStr ? `--data '${escapeShellSingle(cfg.bodyStr)}'` : '';
+      return `curl -i ${methodPart} ${headersPart} ${dataPart} '${escapeShellSingle(cfg.url)}'`.replace(/\s+/g, ' ').trim();
+    }
+
+    function updateCurl() {
+      const cfg = buildRequestConfig(false); // don't sign for preview yet; will show placeholder
+      const previewHeaders = [...cfg.headers];
+
+      // Show potential signature header placeholders if configured
+      if ($('#sigAlg').value !== 'none' && $('#sigHeader').value.trim()) {
+        const includeTs = $('#includeTs').checked;
+        if (includeTs && $('#tsHeader').value.trim()) {
+          previewHeaders.push([$('#tsHeader').value.trim(), '${ts}']);
+        }
+        previewHeaders.push([$('#sigHeader').value.trim(), $('#sigTemplate').value.trim().replaceAll('${sig}','<computed>').replaceAll('${ts}','${ts}')]);
+      }
+
+      const fakeCfg = { ...cfg, headers: previewHeaders };
+      $('#curl').textContent = buildCurlPreview(fakeCfg);
+      persist();
+    }
+
+    async function sendRequest() {
+      const sends = Math.max(1, parseInt($('#count').value || '1', 10));
+      const interval = Math.max(0, parseInt($('#interval').value || '0', 10));
+      const url = $('#url').value.trim();
+      if (!url) {
+        alert('Please provide a URL');
+        return;
+      }
+      const results = [];
+      for (let i = 0; i < sends; i++) {
+        if (i > 0 && interval > 0) {
+          await new Promise(r => setTimeout(r, interval));
+        }
+        const res = await sendOnce(i+1, sends);
+        results.push(res);
+      }
+      return results;
+    }
+
+    async function sendOnce(idx, total) {
+      const cfg = buildRequestConfig(true);
+      await cfg.signBody().catch(err => {
+        setStatus(`Signature error: ${err.message}`, 'fail');
+      });
+      const requestInit = {
+        method: cfg.method,
+        headers: Object.fromEntries(cfg.headers),
+      };
+      if (cfg.method !== 'GET' && cfg.method !== 'HEAD') {
+        requestInit.body = cfg.bodyStr;
+      }
+
+      $('#curl').textContent = buildCurlPreview(cfg);
+
+      const t0 = performance.now();
+      let statusBadge = '';
+      let latencyMs = null;
+      try {
+        const controller = new AbortController();
+        const timeoutMs = Math.max(1000, parseInt($('#timeout').value || '30', 10) * 1000);
+        const timeout = setTimeout(() => controller.abort('timeout'), timeoutMs);
+
+        const resp = await fetch(cfg.url, { ...requestInit, signal: controller.signal, mode: 'cors' });
+        clearTimeout(timeout);
+        latencyMs = performance.now() - t0;
+
+        const headersObj = {};
+        resp.headers.forEach((v,k) => headersObj[k] = v);
+        const text = await resp.text();
+        $('#respHeaders').textContent = Object.entries(headersObj).map(([k,v]) => `${k}: ${v}`).join('\n') || '(no headers)';
+        $('#respBody').textContent = prettyMaybeJSON(text);
+
+        statusBadge = `${resp.ok ? '✔' : '✖'} ${resp.status} ${resp.statusText} • ${Math.round(latencyMs)} ms`;
+        setStatus(statusBadge, resp.ok ? 'ok' : 'fail');
+        addHistory({ idx, total, status: `${resp.status} ${resp.statusText}`, latency: Math.round(latencyMs), url: cfg.url, method: cfg.method });
+      } catch (err) {
+        latencyMs = performance.now() - t0;
+        const reason = err?.name === 'AbortError' ? 'Request timed out' : (err?.message || String(err));
+        $('#respHeaders').textContent = '';
+        $('#respBody').textContent = prettyMaybeJSON(reason + '\n\nNote: If this is a different origin and the server does not allow CORS, the browser will block the response. Use the cURL command.');
+        statusBadge = `✖ Error • ${Math.round(latencyMs)} ms`;
+        setStatus(statusBadge, 'fail');
+        addHistory({ idx, total, status: 'ERROR', latency: Math.round(latencyMs), url: cfg.url, method: cfg.method });
+      }
+      $('#lastLatency').textContent = latencyMs ? Math.round(latencyMs) + ' ms' : '-';
+      $('#sendsCount').textContent = String(parseInt($('#sendsCount').textContent || '0',10) + 1);
+
+      return true;
+    }
+
+    function setStatus(text, type) {
+      const sb = $('#statusBar');
+      sb.innerHTML = '';
+      const b = document.createElement('span');
+      b.className = `badge ${type === 'ok' ? 'ok' : type === 'fail' ? 'fail' : ''}`;
+      b.textContent = text;
+      sb.appendChild(b);
+    }
+
+    function addHistory({ idx, total, status, latency, url, method }) {
+      const h = $('#history');
+      const stamp = new Date().toISOString();
+      h.textContent = `[${stamp}] (${idx}/${total}) ${method} ${url} -> ${status} in ${latency} ms\n` + h.textContent;
+    }
+
+    function persist() {
+      const state = {
+        url: $('#url').value,
+        method: $('#method').value,
+        contentType: $('#contentType').value,
+        timeout: $('#timeout').value,
+        body: $('#body').value,
+        headers: buildHeadersArray(),
+        sigAlg: $('#sigAlg').value,
+        sigSecret: $('#sigSecret').value,
+        sigHeader: $('#sigHeader').value,
+        sigTemplate: $('#sigTemplate').value,
+        includeTs: $('#includeTs').checked,
+        tsHeader: $('#tsHeader').value,
+        count: $('#count').value,
+        interval: $('#interval').value
+      };
+      try { localStorage.setItem('webhookTesterStateV1', JSON.stringify(state)); } catch {}
+    }
+
+    function restore() {
+      try {
+        const raw = localStorage.getItem('webhookTesterStateV1');
+        if (!raw) {
+          // defaults
+          setHeadersArray([
+            ['User-Agent', 'WebhookTester/1.0'],
+          ]);
+          return;
+        }
+        const s = JSON.parse(raw);
+        $('#url').value = s.url || '';
+        $('#method').value = s.method || 'POST';
+        $('#contentType').value = s.contentType || 'application/json';
+        $('#timeout').value = s.timeout || '30';
+        $('#body').value = s.body || '';
+        setHeadersArray(Array.isArray(s.headers) ? s.headers : []);
+        $('#sigAlg').value = s.sigAlg || 'none';
+        $('#sigSecret').value = s.sigSecret || '';
+        $('#sigHeader').value = s.sigHeader || 'X-Signature';
+        $('#sigTemplate').value = s.sigTemplate || 'sha256=${sig}';
+        $('#includeTs').checked = !!s.includeTs;
+        $('#tsHeader').value = s.tsHeader || 'X-Signature-Timestamp';
+        $('#count').value = s.count || '1';
+        $('#interval').value = s.interval || '0';
+      } catch {
+        setHeadersArray([
+          ['User-Agent', 'WebhookTester/1.0'],
+        ]);
+      }
+    }
+
+    function wire() {
+      // controls
+      for (const id of ['url','method','contentType','timeout','body','sigAlg','sigSecret','sigHeader','sigTemplate','includeTs','tsHeader','count','interval']) {
+        const el = document.getElementById(id);
+        el.addEventListener('input', updateCurl);
+      }
+      $('#sendBtn').addEventListener('click', sendRequest);
+      $('#resetBtn').addEventListener('click', () => { localStorage.removeItem('webhookTesterStateV1'); location.reload(); });
+      $('#clearRespBtn').addEventListener('click', () => { $('#respHeaders').textContent=''; $('#respBody').textContent=''; $('#statusBar').innerHTML=''; $('#lastLatency').textContent='-'; });
+
+      $('#addHeader').addEventListener('click', () => { addHeaderRow(); });
+      document.querySelectorAll('.addQuick').forEach(ch => {
+        ch.addEventListener('click', () => addHeaderRow(ch.dataset.name, ch.dataset.val));
+      });
+
+      $('#copyCurl').addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText($('#curl').textContent);
+          const prev = $('#copyCurl').textContent;
+          $('#copyCurl').textContent = 'Copied!';
+          setTimeout(()=>$('#copyCurl').textContent=prev, 1000);
+        } catch {}
+      });
+
+      $('#prettyBtn').addEventListener('click', () => {
+        try { $('#body').value = JSON.stringify(JSON.parse($('#body').value), null, 2); updateCurl(); } catch { /* ignore */ }
+      });
+      $('#minifyBtn').addEventListener('click', () => {
+        try { $('#body').value = JSON.stringify(JSON.parse($('#body').value)); updateCurl(); } catch { /* ignore */ }
+      });
+      $('#fillBtn').addEventListener('click', () => {
+        $('#body').value = `{
+  "event": "user.created",
+  "id": "evt_${'${RANDHEX8}'}",
+  "created": "${'${NOW_ISO}'}",
+  "data": {
+    "user": {
+      "id": "${'${UUIDv4}'}",
+      "email": "user.${'${RANDHEX8}'}@example.com",
+      "role": "tester"
+    }
+  }
+}`;
+        updateCurl();
+      });
+
+      // crypto hint
+      if (!window.isSecureContext || !window.crypto?.subtle) {
+        $('#cryptoHint').textContent = 'Note: HMAC signing requires a secure context (HTTPS or localhost). If unavailable, use the generated cURL to sign on a server or run this file via a local server.';
+      } else {
+        $('#cryptoHint').textContent = 'HMAC signing is performed in-browser using Web Crypto.';
+      }
+    }
+
+    // Initialize headers container
+    function ensureHeadersContainer() {
+      if (!$('#headers').children.length) addHeaderRow();
+    }
+
+    // Init
+    restore();
+    ensureHeadersContainer();
+    wire();
+    updateCurl();
+  </script>
+</body>
+</html>
